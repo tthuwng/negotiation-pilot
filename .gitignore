@@ -47,3 +47,7 @@ sw.js.map
 workbox-*.js
 workbox-*.js.map
 backend/mcts/__pycache__/llm.cpython-39.pyc
+
+.next
+
+node_modules

@@ -1,22 +1,22 @@
-import type { Metadata } from 'next';
-import { Toaster } from 'sonner';
+import type { Metadata } from "next";
+import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
-import { ThemeProvider } from '@/components/theme-provider';
-
-import './globals.css';
+import "./globals.css";
+import StytchProvider from "@/components/stytch-provider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Next.js Chatbot Template',
-  description: 'Next.js chatbot template using the AI SDK.',
+  metadataBase: new URL("https://chat.vercel.ai"),
+  title: "Next.js Chatbot Template",
+  description: "Next.js chatbot template using the AI SDK.",
 };
 
 export const viewport = {
-  maximumScale: 1, // Disable auto-zoom on mobile Safari
+  maximumScale: 1,
 };
 
-const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
-const DARK_THEME_COLOR = 'hsl(240deg 10% 3.92%)';
+const LIGHT_THEME_COLOR = "hsl(0 0% 100%)";
+const DARK_THEME_COLOR = "hsl(240deg 10% 3.92%)";
 const THEME_COLOR_SCRIPT = `\
 (function() {
   var html = document.documentElement;
@@ -41,32 +41,27 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      // `next-themes` injects an extra classname to the body element to avoid
-      // visual flicker before hydration. Hence the `suppressHydrationWarning`
-      // prop is necessary to avoid the React hydration mismatch warning.
-      // https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
-      suppressHydrationWarning
-    >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: THEME_COLOR_SCRIPT,
-          }}
-        />
-      </head>
-      <body className="antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Toaster position="top-center" />
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
+    <StytchProvider>
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: THEME_COLOR_SCRIPT,
+            }}
+          />
+        </head>
+        <body className="antialiased">
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Toaster position="top-center" />
+            {children}
+          </ThemeProvider>
+        </body>
+      </html>
+    </StytchProvider>
   );
 }

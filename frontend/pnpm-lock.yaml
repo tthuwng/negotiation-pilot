@@ -59,6 +59,12 @@ importers:
       '@radix-ui/react-visually-hidden':
         specifier: ^1.1.0
         version: 1.1.0(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@19.0.0-rc-45804af1-20241021(react@19.0.0-rc-45804af1-20241021))(react@19.0.0-rc-45804af1-20241021)
+      '@stytch/nextjs':
+        specifier: ^21.4.0
+        version: 21.4.0(@stytch/vanilla-js@5.17.0)(react-dom@19.0.0-rc-45804af1-20241021(react@19.0.0-rc-45804af1-20241021))(react@19.0.0-rc-45804af1-20241021)
+      '@stytch/vanilla-js':
+        specifier: ^5.17.0
+        version: 5.17.0
       '@vercel/analytics':
         specifier: ^1.3.1
         version: 1.3.2(next@15.0.3-canary.2(@opentelemetry/api@1.9.0)(react-dom@19.0.0-rc-45804af1-20241021(react@19.0.0-rc-45804af1-20241021))(react@19.0.0-rc-45804af1-20241021))(react@19.0.0-rc-45804af1-20241021)
@@ -1497,6 +1503,19 @@ packages:
   '@rushstack/eslint-patch@1.10.4':
     resolution: {integrity: sha512-WJgX9nzTqknM393q1QJDJmoW28kUfEnybeTfVNcNAPnIx210RXm2DiXiHzfNPJNIUUb1tJnz/l4QGtJ30PgWmA==}
 
+  '@stytch/core@2.42.0':
+    resolution: {integrity: sha512-wkgrU/qJmoTcxaajvnqQFD0D53taawoW9GE9tShm5VKbWgI4coYfZcP1xCCl5arkHI5P2418wkDuh99LGlYNiA==}
+
+  '@stytch/nextjs@21.4.0':
+    resolution: {integrity: sha512-JgWT6LPNkVWUT0uPUCR4ZSGoJkKqAb2kdKO6INqTYYJauVcNqj8SmK0NRLj6DYA4wVPRHeyDM+q/puBDXy0bMA==}
+    peerDependencies:
+      '@stytch/vanilla-js': ^5.0.0
+      react: '>= 17.0.2'
+      react-dom: '>= 17.0.2'
+
+  '@stytch/vanilla-js@5.17.0':
+    resolution: {integrity: sha512-3XPXcUf4jXjMWnuYMtNgCPGhEjQYtFmrTwoUUgrx1FO0gS13gKFGOQDv+JGbJnE9RzHIfrX9iFZjn2qrU+02eQ==}
+
   '@swc/counter@0.1.3':
     resolution: {integrity: sha512-e2BR4lsJkkRlKZ/qCHPw9ZaSxc0MVUd7gtbtaB7aMvHeJVYe8sOB8DBZkP2DtISHGSku9sCK6T6cnY0CtXrOCQ==}
 
@@ -1528,6 +1547,9 @@ packages:
 
   '@types/estree@1.0.6':
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
+
+  '@types/google-one-tap@1.2.6':
+    resolution: {integrity: sha512-REmJsXVHvKb/sgI8DF+7IesMbDbcsEokHBqxU01ENZ8d98UPWdRLhUCtxEm9bhNFFg6PJGy7PNFdvovp0hK3jA==}
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
@@ -3607,6 +3629,10 @@ packages:
     resolution: {integrity: sha512-Ne+eE4r0/iWnpAxD852z3A+N0Bt5RN//NjJwRd2VFHEmrywxf5vsZlh4R6lixl6B+wz/8d+maTSAkN1FIkI3LQ==}
     engines: {node: '>=10'}
 
+  type-fest@4.15.0:
+    resolution: {integrity: sha512-tB9lu0pQpX5KJq54g+oHOLumOx+pMep4RaM6liXh2PKmVRFF+/vAtUP0ZaJ0kOySfVNjF6doBWPHhBhISKdlIA==}
+    engines: {node: '>=16'}
+
   typed-array-buffer@1.0.2:
     resolution: {integrity: sha512-gEymJYKZtKXzzBzM4jqa9w6Q1Jjm7x2d+sh19AdsD4wqnMPDYyvwpsIc2Q/835kHuo3BEQ7CjelGhfTsoBb2MQ==}
     engines: {node: '>= 0.4'}
@@ -3695,6 +3721,10 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  uuid@8.3.2:
+    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    hasBin: true
 
   vfile-message@4.0.2:
     resolution: {integrity: sha512-jRDZ1IMLttGj41KcZvlrYAaI3CfqpLpfpf+Mfig13viT6NKvRzWZ+lXz0Y5D60w6uJIBAOGq9mSHf0gktF0duw==}
@@ -4767,6 +4797,22 @@ snapshots:
 
   '@rushstack/eslint-patch@1.10.4': {}
 
+  '@stytch/core@2.42.0':
+    dependencies:
+      uuid: 8.3.2
+
+  '@stytch/nextjs@21.4.0(@stytch/vanilla-js@5.17.0)(react-dom@19.0.0-rc-45804af1-20241021(react@19.0.0-rc-45804af1-20241021))(react@19.0.0-rc-45804af1-20241021)':
+    dependencies:
+      '@stytch/vanilla-js': 5.17.0
+      react: 19.0.0-rc-45804af1-20241021
+      react-dom: 19.0.0-rc-45804af1-20241021(react@19.0.0-rc-45804af1-20241021)
+
+  '@stytch/vanilla-js@5.17.0':
+    dependencies:
+      '@stytch/core': 2.42.0
+      '@types/google-one-tap': 1.2.6
+      type-fest: 4.15.0
+
   '@swc/counter@0.1.3': {}
 
   '@swc/helpers@0.5.13':
@@ -4800,6 +4846,8 @@ snapshots:
       '@types/estree': 1.0.6
 
   '@types/estree@1.0.6': {}
+
+  '@types/google-one-tap@1.2.6': {}
 
   '@types/hast@3.0.4':
     dependencies:
@@ -7343,6 +7391,8 @@ snapshots:
 
   type-fest@0.20.2: {}
 
+  type-fest@4.15.0: {}
+
   typed-array-buffer@1.0.2:
     dependencies:
       call-bind: 1.0.7
@@ -7454,6 +7504,8 @@ snapshots:
       react: 19.0.0-rc-45804af1-20241021
 
   util-deprecate@1.0.2: {}
+
+  uuid@8.3.2: {}
 
   vfile-message@4.0.2:
     dependencies:
