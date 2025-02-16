@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import type { User } from 'next-auth';
-import { useRouter } from 'next/navigation';
-import axios from 'axios'
-import { PlusIcon } from '@/components/icons';
-import { SidebarHistory } from '@/components/sidebar-history';
-import { SidebarUserNav } from '@/components/sidebar-user-nav';
-import { Button } from '@/components/ui/button';
+import type { User } from "next-auth";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import { PlusIcon } from "@/components/icons";
+import { SidebarHistory } from "@/components/sidebar-history";
+import { SidebarUserNav } from "@/components/sidebar-user-nav";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -14,24 +14,24 @@ import {
   SidebarHeader,
   SidebarMenu,
   useSidebar,
-} from '@/components/ui/sidebar';
-import Link from 'next/link';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { toast } from 'sonner';
+} from "@/components/ui/sidebar";
+import Link from "next/link";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { toast } from "sonner";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
-  const { open,setOpenMobile } = useSidebar();
+  const { open, setOpenMobile } = useSidebar();
 
-  console.log(open)
+  console.log(open);
 
   return (
-    <Sidebar className="group-data-[side=left]:border-r-0">
+    <Sidebar className="border-r">
       <SidebarHeader>
         <SidebarMenu>
-          <div className="flex flex-row justify-between items-center">
+          <div className="flex flex-row justify-between items-center p-5 border-b">
             <Link
-              href="/"
+              href="/chat"
               onClick={() => {
                 setOpenMobile(false);
               }}
@@ -49,12 +49,14 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   className="p-2 h-fit"
                   onClick={async () => {
                     try {
-                      const response = await (await axios.post('/api/chat')).data
+                      const response = await (
+                        await axios.post("/api/chat")
+                      ).data;
                       setOpenMobile(false);
-                      toast.success('Chat created successfully')
+                      toast.success("Chat created successfully");
                       router.push(`/chat/${response.chatId}`);
                     } catch (error) {
-                      toast.error('Error creating chat')
+                      toast.error("Error creating chat");
                     }
                   }}
                 >
