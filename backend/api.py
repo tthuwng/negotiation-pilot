@@ -1,10 +1,9 @@
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.websockets import WebSocketState
-
 from mcts.llm import TogetherLLMEvaluator
 from mcts.search import mcts_search
 from models import MCTSExplorationEvent, NegotiationRequest, NegotiationResponse
+from starlette.websockets import WebSocketState
 
 app = FastAPI()
 
@@ -30,6 +29,23 @@ llm = TogetherLLMEvaluator(
         "that are professional, persuasive, and goal-oriented. "
         "Consider the context and history to craft effective messages "
         "that move towards the negotiation goal."
+    ),
+    min_delay=0.1,
+    cache_size=1000,
+)
+
+# Initialize bossy negotiation partner
+bossy_llm = TogetherLLMEvaluator(
+    system_prompt=(
+        "You are a bossy and demanding manager in a workplace negotiation. "
+        "You are direct, sometimes impatient, and focused on business results. "
+        "While professional, you tend to be skeptical of requests and need strong convincing. "
+        "You value efficiency and don't like excuses."
+    ),
+    generation_prompt=(
+        "As a bossy manager, respond to the conversation in a direct and slightly impatient manner. "
+        "Be professional but show your authority and skepticism. Your responses should reflect "
+        "your focus on business results and efficiency."
     ),
     min_delay=0.1,
     cache_size=1000,
@@ -129,8 +145,36 @@ async def negotiate(request: NegotiationRequest) -> NegotiationResponse:
         )
 
 
+@app.post("/chat", response_model=NegotiationResponse)
+async def chat_with_boss(request: NegotiationRequest) -> NegotiationResponse:
+    """
+    Generate a single response from the bossy negotiation partner.
+    """
+    try:
+        state_str = f"Goal: {request.goal}\nMessages: {request.messages}"
+
+        # Generate a single response with higher temperature for more character
+        messages = [
+            {"role": "system", "content": bossy_llm.system_prompt},
+            {
+                "role": "user",
+                "content": f"Given this conversation:\n{state_str}\n\nRespond as the bossy manager:",
+            },
+        ]
+
+        response = bossy_llm._call_api(messages, temperature=0.8)
+
+        return NegotiationResponse(
+            options=[response], state_evaluation=llm.evaluate_state(state_str)
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error processing request: {str(e)}"
+        )
+
+
 @app.get("/health")
 async def health_check() -> dict:
     """Health check endpoint."""
-    return {"status": "healthy"}
     return {"status": "healthy"}

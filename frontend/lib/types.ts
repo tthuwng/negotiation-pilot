@@ -2,7 +2,7 @@ export interface Message {
   id: string;
   content: string;
   role: "user" | "assistant";
-  createdAt: string;
+  created_at: string;
 }
 
 export interface Chat {
@@ -10,8 +10,8 @@ export interface Chat {
   visibility: "public" | "private";
   goal?: string;
   userId?: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export type VisibilityType = "public" | "private"; 
