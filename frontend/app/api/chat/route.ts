@@ -1,6 +1,5 @@
 import { auth } from "@/app/(auth)/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Message } from "@/lib/types";
 import { generateUUID } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -48,73 +47,68 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { messages, id: chatId } = body;
+    const { messages, id: chatId, goal } = body;
 
     if (!chatId || !messages || !messages.length) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
     const supabase = await createClient();
-    const messageId = generateUUID();
-    const message = messages[0] as Message; // We expect a single message
+    const userMessageId = generateUUID();
+    const assistantMessageId = generateUUID();
 
     // Insert the user's message
-    const { error: messageError } = await supabase.from('messages').insert({
-      id: messageId,
+    const { error: userMessageError } = await supabase.from('messages').insert({
+      id: userMessageId,
       chatId: chatId,
-      content: message.content,
-      role: message.role,
-      createdAt: new Date().toISOString()
+      content: messages[messages.length - 1], // Get the last message from the array
+      role: "user", // Since this is coming from user input
+      created_at: new Date().toISOString()
     });
 
-    if (messageError) {
-      console.error("Error creating message:", messageError);
-      return new NextResponse("Error creating message", { status: 500 });
+    if (userMessageError) {
+      console.error("Error creating user message:", userMessageError);
+      return new NextResponse("Error creating user message", { status: 500 });
     }
 
     // Generate assistant's response
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/negotiate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        goal: message.content,
-        messages: [message.content]
-      })
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
-      throw new Error("Failed to get assistant response");
+      throw new Error("Backend request failed");
     }
 
     const data = await response.json();
-    const assistantMessageId = generateUUID();
-
-    // Insert assistant's response
-    const { error: assistantError } = await supabase.from('messages').insert({
-      id: assistantMessageId,
-      chatId: chatId,
-      content: data.options[0], // Use the first option as the response
-      role: "assistant",
-      createdAt: new Date().toISOString()
-    });
-
-    if (assistantError) {
-      console.error("Error creating assistant message:", assistantError);
-      return new NextResponse("Error creating assistant message", { status: 500 });
-    }
-
-    return NextResponse.json({
-      id: messageId,
-      assistantMessage: {
+    
+    // Save assistant's response to database
+    if (data.options?.[0]) {
+      const { error: assistantMessageError } = await supabase.from('messages').insert({
         id: assistantMessageId,
+        chatId: chatId,
         content: data.options[0],
         role: "assistant",
-        createdAt: new Date().toISOString()
+        created_at: new Date().toISOString()
+      });
+
+      if (assistantMessageError) {
+        console.error("Error creating assistant message:", assistantMessageError);
+        // We don't return error here as we already have the response
       }
-    });
+    }
+
+    return NextResponse.json(data);
   } catch (error) {
-    console.error("Error in chat API:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error("Error in chat API route:", error);
+    return NextResponse.json(
+      { error: "Failed to process chat request" },
+      { status: 500 }
+    );
   }
 }
 
