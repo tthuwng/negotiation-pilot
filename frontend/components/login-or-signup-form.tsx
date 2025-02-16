@@ -6,14 +6,10 @@ import { toast } from "sonner";
 
 const Login = () => {
   return (
-    <div className="sign-in-container">
+    <div className="sign-in-container flex items-center justify-center h-screen">
       <StytchLogin
         config={{
-          products: [Products.oauth, Products.otp],
-          otpOptions: {
-            methods: ["sms"],
-            expirationMinutes: 10,
-          },
+          products: [Products.oauth],
           oauthOptions: {
             providers: [
               { type: "google" },
