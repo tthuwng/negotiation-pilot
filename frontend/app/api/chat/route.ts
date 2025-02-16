@@ -1,5 +1,6 @@
 import { auth } from "@/app/(auth)/auth";
 import { createClient } from "@/lib/supabase/server";
+import { generateUUID } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 
@@ -46,28 +47,28 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { messages, id: chatId } = body;
+    const { messages, id: chatId, goal } = body;
 
     if (!chatId || !messages || !messages.length) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
     const supabase = await createClient();
-    const messageId = generateUUID();
-    const message = messages[0] as Message; // We expect a single message
+    const userMessageId = generateUUID();
+    const assistantMessageId = generateUUID();
 
     // Insert the user's message
-    const { error: messageError } = await supabase.from('messages').insert({
-      id: messageId,
+    const { error: userMessageError } = await supabase.from('messages').insert({
+      id: userMessageId,
       chatId: chatId,
-      content: message.content,
-      role: message.role,
-      createdAt: new Date().toISOString()
+      content: messages[messages.length - 1], // Get the last message from the array
+      role: "user", // Since this is coming from user input
+      created_at: new Date().toISOString()
     });
 
-    if (messageError) {
-      console.error("Error creating message:", messageError);
-      return new NextResponse("Error creating message", { status: 500 });
+    if (userMessageError) {
+      console.error("Error creating user message:", userMessageError);
+      return new NextResponse("Error creating user message", { status: 500 });
     }
 
     // Generate assistant's response
@@ -84,6 +85,23 @@ export async function PUT(request: NextRequest) {
     }
 
     const data = await response.json();
+    
+    // Save assistant's response to database
+    if (data.options?.[0]) {
+      const { error: assistantMessageError } = await supabase.from('messages').insert({
+        id: assistantMessageId,
+        chatId: chatId,
+        content: data.options[0],
+        role: "assistant",
+        created_at: new Date().toISOString()
+      });
+
+      if (assistantMessageError) {
+        console.error("Error creating assistant message:", assistantMessageError);
+        // We don't return error here as we already have the response
+      }
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error in chat API route:", error);

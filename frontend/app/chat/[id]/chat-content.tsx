@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useMCTSWebSocket } from "@/lib/hooks/use-mcts-websocket";
+import { MCTSNode, useMCTSWebSocket } from "@/lib/hooks/use-mcts-websocket";
 import { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ChevronDown, Video } from "lucide-react";
@@ -175,41 +175,44 @@ export function ChatContent({ chat, id, uiMessages: initialMessages, chatModel, 
         })
       });
 
-      if (!bossResponse.ok) {
-        throw new Error("Failed to get boss response");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get response");
       }
 
       // Get boss's response
-      const bossData = await bossResponse.json();
+      const bossData = await response.json();
       
-      if (bossData.options?.[0]) {
-        const assistantMessage: Message = {
-          id: Date.now().toString(),
-          content: bossData.options[0],
-          role: "assistant",
-          created_at: new Date().toISOString()
-        };
-        setMessages(prev => [...prev, assistantMessage]);
+      if (!bossData.options?.length) {
+        throw new Error("No response options received");
+      }
 
-        // After getting boss's response, get negotiation analysis
-        const negotiationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/negotiate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            goal: goal,
-            messages: [...messages.map(m => m.content), newMessage.content, bossData.options[0]]
-          })
-        });
+      const assistantMessage: Message = {
+        id: Date.now().toString(),
+        content: bossData.options[0],
+        role: "assistant",
+        created_at: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
 
-        if (negotiationResponse.ok) {
-          const negotiationData = await negotiationResponse.json();
-          setAnalysisResults(
-            negotiationData.options.map((text: string, i: number) => ({
-              text,
-              score: i === 0 ? negotiationData.state_evaluation : negotiationData.state_evaluation * (0.9 - i * 0.1)
-            }))
-          );
-        }
+      // After getting boss's response, get negotiation analysis
+      const negotiationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/negotiate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: goal,
+          messages: [...messages.map(m => m.content), newMessage.content, bossData.options[0]]
+        })
+      });
+
+      if (negotiationResponse.ok) {
+        const negotiationData = await negotiationResponse.json();
+        setAnalysisResults(
+          negotiationData.options.map((text: string, i: number) => ({
+            text,
+            score: i === 0 ? negotiationData.state_evaluation : negotiationData.state_evaluation * (0.9 - i * 0.1)
+          }))
+        );
       }
 
     } catch (error) {
