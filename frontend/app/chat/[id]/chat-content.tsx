@@ -17,6 +17,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { ImperativePanelHandle } from "react-resizable-panels";
+import { toast } from "sonner";
 
 interface ChatContentProps {
   chat: {
@@ -396,8 +397,8 @@ export function ChatContent({
           }))
         );
       }
-    } catch (error) {
-      console.error("Error in chat:", error);
+    } catch (error: any) {
+      toast.error(`Error in chat: ${error.message}`);
       setMessages((prev) => prev.slice(0, -1));
       setInputValue(inputValue);
     } finally {
