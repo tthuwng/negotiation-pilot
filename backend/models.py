@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel
 
@@ -14,6 +14,14 @@ class NegotiationResponse(BaseModel):
     state_evaluation: float
 
 
+class BossChatRequest(BaseModel):
+    messages: List[str]
+
+
+class BossChatResponse(BaseModel):
+    response: str
+
+
 class MCTSNodeUpdate(BaseModel):
     node_id: str
     parent_id: Optional[str]
@@ -23,13 +31,23 @@ class MCTSNodeUpdate(BaseModel):
     action_taken: Optional[str]
     depth: int
     children_ids: List[str] = []
-    status: str = "exploring"  # "exploring", "evaluating", "complete"
+    status: Literal["exploring", "evaluating", "complete"] = "exploring"
     evaluation_score: Optional[float] = None
 
 
 class MCTSExplorationEvent(BaseModel):
-    event_type: str  # "node_update", "selection", "expansion", "evaluation", "backprop", "complete"
-    node: MCTSNodeUpdate
+    event_type: Literal[
+        "node_update",
+        "selection",
+        "expansion",
+        "evaluation",
+        "backprop",
+        "complete",
+        "error",
+    ]
+    node: Optional[MCTSNodeUpdate] = None
+    nodes: Optional[List[MCTSNodeUpdate]] = None
     metadata: Optional[Dict] = None
     total_nodes: int = 0
     max_depth: int = 0
+    state_evaluation: Optional[float] = None
