@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from math import log, sqrt
-from typing import Callable, Generic, List, Optional, TypeVar
+from typing import Callable, Generic, List, Literal, Optional, TypeVar
 
 State = TypeVar("State")
 Action = TypeVar("Action")
+NodeStatus = Literal["exploring", "evaluating", "complete"]
 
 
 class MCTSNode(Generic[State, Action]):
@@ -20,6 +21,8 @@ class MCTSNode(Generic[State, Action]):
         self.children: List[MCTSNode[State, Action]] = []
         self.visits: int = 0
         self.value: float = 0.0
+        self.status: NodeStatus = "exploring"
+        self.evaluation_score: Optional[float] = None
 
     def ucb_score(self, exploration_weight: float = 1.4) -> float:
         """Calculate the UCB score for this node."""
@@ -90,5 +93,6 @@ class MCTSNode(Generic[State, Action]):
     def __repr__(self) -> str:
         return (
             f"MCTSNode(state={self.state}, "
-            f"visits={self.visits}, value={self.value:.2f})"
+            f"visits={self.visits}, value={self.value:.2f}, "
+            f"status={self.status})"
         )

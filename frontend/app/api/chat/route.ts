@@ -71,13 +71,13 @@ export async function PUT(request: NextRequest) {
       return new NextResponse("Error creating user message", { status: 500 });
     }
 
-    // Generate assistant's response
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/negotiate`, {
+    // Generate boss's response
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/boss`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ messages }),
     });
 
     if (!response.ok) {
@@ -87,11 +87,11 @@ export async function PUT(request: NextRequest) {
     const data = await response.json();
     
     // Save assistant's response to database
-    if (data.options?.[0]) {
+    if (data.response) {
       const { error: assistantMessageError } = await supabase.from('messages').insert({
         id: assistantMessageId,
         chatId: chatId,
-        content: data.options[0],
+        content: data.response,
         role: "assistant",
         created_at: new Date().toISOString()
       });
@@ -102,11 +102,35 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(data);
+    // Get negotiation analysis if goal is provided
+    let negotiationAnalysis = null;
+    if (goal) {
+      const negotiationResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/negotiate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          goal,
+          messages: [...messages, data.response],
+        }),
+      });
+
+      if (negotiationResponse.ok) {
+        negotiationAnalysis = await negotiationResponse.json();
+      }
+    }
+
+    return new NextResponse(JSON.stringify({
+      options: [data.response],
+      state_evaluation: negotiationAnalysis?.state_evaluation,
+      negotiation_options: negotiationAnalysis?.options,
+    }));
+
   } catch (error) {
-    console.error("Error in chat API route:", error);
-    return NextResponse.json(
-      { error: "Failed to process chat request" },
+    console.error("Error in chat:", error);
+    return new NextResponse(
+      JSON.stringify({ error: "Failed to process chat" }),
       { status: 500 }
     );
   }
