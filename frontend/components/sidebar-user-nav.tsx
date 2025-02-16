@@ -2,7 +2,7 @@
 import { ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import type { User } from 'next-auth';
-import { signOut } from 'next-auth/react';
+import {useStytch} from '@stytch/nextjs'
 import { useTheme } from 'next-themes';
 
 import {
@@ -17,9 +17,20 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 export function SidebarUserNav({ user }: { user: User }) {
   const { setTheme, theme } = useTheme();
+
+  const stytch = useStytch()
+
+  const router = useRouter()
+
+  const logout = useCallback(() => {
+    stytch.session.revoke()
+    router.push('/')
+  }, [stytch, router])
 
   return (
     <SidebarMenu>
@@ -53,11 +64,7 @@ export function SidebarUserNav({ user }: { user: User }) {
               <button
                 type="button"
                 className="w-full cursor-pointer"
-                onClick={() => {
-                  signOut({
-                    redirectTo: '/',
-                  });
-                }}
+                onClick={logout}
               >
                 Sign out
               </button>

@@ -17,7 +17,7 @@ class TogetherLLMEvaluator:
         min_delay: float = 0.1,
         cache_size: int = 1000,
     ) -> None:
-        self.api_key = api_key or os.getenv("TOGETHER_API_KEY")
+        self.api_key = "75c648f845ed1d8ce2ac74f471f7eb5f9d2c8627934567d8c0357d9279133061"
         if not self.api_key:
             raise ValueError("Together API key not found")
 
