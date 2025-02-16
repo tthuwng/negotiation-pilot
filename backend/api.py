@@ -3,6 +3,8 @@ from typing import Dict, List
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.websockets import WebSocketState
+
 from mcts.llm import TogetherLLMEvaluator
 from mcts.search import mcts_search
 from models import (
@@ -12,7 +14,6 @@ from models import (
     NegotiationRequest,
     NegotiationResponse,
 )
-from starlette.websockets import WebSocketState
 
 app = FastAPI()
 
@@ -34,7 +35,7 @@ llm = TogetherLLMEvaluator(
         "achieving the negotiation goal on a scale from 0 to 1."
     ),
     generation_prompt=(
-        "You are an expert negotiator. Generate strategic responses "
+        "You are an expert negotiator. Generate strategic and extremely concise responses (max 2 sentences) "
         "that are professional, persuasive, and goal-oriented. "
         "Consider the context and history to craft effective messages "
         "that move towards the negotiation goal."
@@ -52,7 +53,7 @@ bossy_llm = TogetherLLMEvaluator(
         "You value efficiency and don't like excuses."
     ),
     generation_prompt=(
-        "As a bossy manager, respond very humanly and concisely to the conversation in a direct and slightly impatient manner. "
+        "As a bossy manager, respond very humanly and extremely concisely (max 2 sentences) to the conversation in a direct and slightly impatient manner. "
         "Be professional but show your authority and skepticism. Your responses should reflect "
         "your focus on business results and efficiency."
     ),

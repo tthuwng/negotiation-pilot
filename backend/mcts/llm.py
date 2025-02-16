@@ -1,11 +1,11 @@
 import logging
-import os
 import time
 from functools import lru_cache
-from typing import Dict, List, Optional, Set, Any
+from typing import Any, Dict, List, Optional, Set
+
+from together import Together
 
 import wandb  # make sure to install wandb: pip install wandb
-from together import Together
 
 # Global initialization in main.py (or at the top of your application)
 if wandb.run is None:
@@ -16,7 +16,7 @@ if wandb.run is None:
             "architecture": "CNN",
             "dataset": "CIFAR-100",
             "epochs": 10,
-        }
+        },
     )
 
 
@@ -31,24 +31,16 @@ class TogetherLLMEvaluator:
         cache_size: int = 1000,
     ) -> None:
         # For demonstration, a hard-coded API key is used
-        self.api_key = "75c648f845ed1d8ce2ac74f471f7eb5f9d2c8627934567d8c0357d9279133061"
+        self.api_key = (
+            "75c648f845ed1d8ce2ac74f471f7eb5f9d2c8627934567d8c0357d9279133061"
+        )
         if not self.api_key:
             raise ValueError("Together API key not found")
 
         self.client = Together(api_key=self.api_key)
         self.model = model
-        self.system_prompt = system_prompt or (
-            "You are an expert conversation evaluator. "
-            "Given a conversation state with a goal and message history, "
-            "evaluate how well the conversation is progressing towards "
-            "the goal on a scale from 0 to 1."
-        )
-        self.generation_prompt = generation_prompt or (
-            "You are an expert conversationalist. "
-            "Given a conversation goal and history, generate appropriate "
-            "next responses that would help achieve the goal effectively. "
-            "Be strategic, professional, and context-aware."
-        )
+        self.system_prompt = system_prompt
+        self.generation_prompt = generation_prompt
         self.last_call_time = 0.0
         self.min_delay = min_delay
         self.cache: Dict[str, List[str]] = {}
@@ -59,7 +51,9 @@ class TogetherLLMEvaluator:
         # Dictionary to store per-user interaction logs
         self.user_interactions: Dict[str, List[Dict[str, Any]]] = {}
 
-    def log_user_interaction(self, user_id: str, action: str, data: Dict[str, Any]) -> None:
+    def log_user_interaction(
+        self, user_id: str, action: str, data: Dict[str, Any]
+    ) -> None:
         """Log an interaction for a given user both locally and to W&B."""
         log_entry = {
             "user_id": user_id,
@@ -120,19 +114,27 @@ class TogetherLLMEvaluator:
         raise RuntimeError("API call failed") from last_error
 
     @lru_cache(maxsize=1000)
-    def generate_responses(self, state_str: str, n: int = 3, user_id: Optional[str] = None) -> List[str]:
+    def generate_responses(
+        self, state_str: str, n: int = 3, user_id: Optional[str] = None
+    ) -> List[str]:
         """Generate possible responses for the current state with caching."""
         # Check cache first
         if state_str in self.cache:
             responses = self.cache[state_str]
             if user_id:
-                self.log_user_interaction(user_id, "generate_responses_cache_hit", {"state": state_str})
+                self.log_user_interaction(
+                    user_id, "generate_responses_cache_hit", {"state": state_str}
+                )
             return responses
 
         self.response_count += 1
-        logging.info(f"[Response Generation #{self.response_count}]\nState:\n{state_str}")
+        logging.info(
+            f"[Response Generation #{self.response_count}]\nState:\n{state_str}"
+        )
         if user_id:
-            self.log_user_interaction(user_id, "generate_responses_start", {"state": state_str})
+            self.log_user_interaction(
+                user_id, "generate_responses_start", {"state": state_str}
+            )
 
         messages = [
             {"role": "system", "content": self.generation_prompt},
@@ -154,7 +156,9 @@ class TogetherLLMEvaluator:
             self.cache[state_str] = responses
 
             if user_id:
-                self.log_user_interaction(user_id, "generate_responses_end", {"responses": responses})
+                self.log_user_interaction(
+                    user_id, "generate_responses_end", {"responses": responses}
+                )
 
             return responses
 
@@ -177,11 +181,17 @@ class TogetherLLMEvaluator:
         if state_str in self.evaluation_cache:
             value = self.evaluation_cache[state_str]
             if user_id:
-                self.log_user_interaction(user_id, "evaluate_state_cache_hit", {"state": state_str, "evaluation": value})
+                self.log_user_interaction(
+                    user_id,
+                    "evaluate_state_cache_hit",
+                    {"state": state_str, "evaluation": value},
+                )
             return value
 
         if user_id:
-            self.log_user_interaction(user_id, "evaluate_state_start", {"state": state_str})
+            self.log_user_interaction(
+                user_id, "evaluate_state_start", {"state": state_str}
+            )
 
         # Record that this state has been seen
         self.seen_states.add(state_str)
@@ -205,7 +215,9 @@ class TogetherLLMEvaluator:
                 value = max(0.0, min(1.0, value))
                 self.evaluation_cache[state_str] = value
                 if user_id:
-                    self.log_user_interaction(user_id, "evaluate_state_end", {"evaluation": value})
+                    self.log_user_interaction(
+                        user_id, "evaluate_state_end", {"evaluation": value}
+                    )
                 return value
             except ValueError:
                 logging.warning(f"Could not parse value from result: {result}")
