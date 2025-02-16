@@ -1,43 +1,17 @@
 import { cookies } from 'next/headers';
 
-import { Chat } from '@/components/chat';
-import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
-import { generateUUID } from '@/lib/utils';
-import { DataStreamHandler } from '@/components/data-stream-handler';
-
 export default async function Page() {
-  const id = generateUUID();
-
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get('chat-model');
 
-  if (!modelIdFromCookie) {
-    return (
-      <>
-        <Chat
-          key={id}
-          id={id}
-          initialMessages={[]}
-          selectedChatModel={DEFAULT_CHAT_MODEL}
-          selectedVisibilityType="private"
-          isReadonly={false}
-        />
-        <DataStreamHandler id={id} />
-      </>
-    );
-  }
-
   return (
-    <>
-      <Chat
-        key={id}
-        id={id}
-        initialMessages={[]}
-        selectedChatModel={modelIdFromCookie.value}
-        selectedVisibilityType="private"
-        isReadonly={false}
-      />
-      <DataStreamHandler id={id} />
-    </>
+    <div className="flex flex-col items-center justify-center h-dvh">
+      <div className="max-w-xl w-full px-4">
+        <h1 className="text-2xl font-bold mb-4 text-center">Welcome to Chat</h1>
+        <p className="text-center text-muted-foreground mb-8">
+          Select a chat from the sidebar or start a new conversation.
+        </p>
+      </div>
+    </div>
   );
 }
