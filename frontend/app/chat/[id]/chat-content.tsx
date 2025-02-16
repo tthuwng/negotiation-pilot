@@ -444,7 +444,7 @@ export function ChatContent({
   );
 
   return (
-    <div className="flex h-screen bg-background w-screen">
+    <div className="flex h-screen bg-background w-full">
       {/* Chat Section */}
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel
@@ -452,7 +452,7 @@ export function ChatContent({
           defaultSize={79}
           ref={chatRef}
         >
-          <div className="flex-1 border-r">
+          <div className="flex flex-col h-full bg-background">
             <div className="border-b p-4 flex items-center gap-4">
               <Button
                 onClick={() => {
@@ -475,9 +475,15 @@ export function ChatContent({
               </div>
               <Button
                 onClick={() => {
-                  setIsNegotiationCopilotOpen(!isNegotitationCopilotOpen);
-                  const negotiationPanel = negotiationRef.current;
-                  negotiationPanel?.expand();
+                  if (isNegotitationCopilotOpen) {
+                    setIsNegotiationCopilotOpen(false);
+                    const negotiationPanel = negotiationRef.current;
+                    negotiationPanel?.collapse();
+                  } else {
+                    setIsNegotiationCopilotOpen(true);
+                    const negotiationPanel = negotiationRef.current;
+                    negotiationPanel?.expand();
+                  }
                 }}
                 variant="ghost"
                 size="icon"
