@@ -1,10 +1,13 @@
 import logging
-from typing import Callable, List, Protocol, Tuple, TypeVar
+from typing import Any, Callable, Coroutine, List, Optional, Protocol, Tuple, TypeVar
+
+from models import MCTSExplorationEvent, MCTSNodeUpdate
 
 from .node import MCTSNode
 
 State = TypeVar("State")
 Action = TypeVar("Action")
+EventCallback = Callable[[MCTSExplorationEvent], Coroutine[Any, Any, None]]
 
 
 class LLMRolloutEvaluator(Protocol):
@@ -13,7 +16,7 @@ class LLMRolloutEvaluator(Protocol):
         ...
 
 
-def mcts_search(
+async def mcts_search(
     initial_state: State,
     get_actions_func: Callable[[State], List[Action]],
     transition_func: Callable[[State, Action], State],
@@ -21,94 +24,80 @@ def mcts_search(
     n_iterations: int = 100,
     exploration_weight: float = 1.4,
     max_depth: int = 10,
-) -> Tuple[Action, MCTSNode[State, Action]]:
+    event_callback: Optional[EventCallback] = None,
+) -> Tuple[Optional[Action], MCTSNode[State, Action]]:
     """
-    Perform MCTS search with LLM-based rollout evaluation.
-
-    Args:
-        initial_state: Starting state
-        get_actions_func: Function that returns list of valid actions
-        transition_func: Function that returns new state after action
-        llm_evaluator: LLM-based evaluator for rollouts
-        n_iterations: Number of MCTS iterations
-        exploration_weight: UCB exploration parameter
-        max_depth: Maximum depth for rollouts
-
-    Returns:
-        Tuple of (best_action, root_node)
+    Perform MCTS search with LLM-based rollout evaluation and event streaming.
     """
     root = MCTSNode(initial_state)
     logging.info(f"Starting MCTS search with {n_iterations} iterations")
 
+    async def emit_event(
+        event_type: str, node: MCTSNode, metadata: Optional[dict] = None
+    ):
+        if event_callback:
+            await event_callback(
+                MCTSExplorationEvent(
+                    event_type=event_type,
+                    node=MCTSNodeUpdate(
+                        node_id=str(id(node)),
+                        parent_id=str(id(node.parent)) if node.parent else None,
+                        state=str(node.state),
+                        visits=node.visits,
+                        value=node.value,
+                        action_taken=str(node.action_taken)
+                        if node.action_taken
+                        else None,
+                    ),
+                    metadata=metadata,
+                )
+            )
+
     # Initialize root node with first evaluation
     root_value = llm_evaluator.evaluate_state(str(initial_state))
     root.update(root_value)
-
-    # Early stopping if we find a very good solution
-    best_value = root_value
-    no_improvement_count = 0
-    early_stop_threshold = 0.95
-    patience = 3
+    await emit_event("initialization", root)
 
     for iteration in range(n_iterations):
         node = root
         path = []
 
-        # Selection and Expansion
-        depth = 0
-        while depth < max_depth:
+        # Selection
+        while node.is_fully_expanded(get_actions_func) and node.children:
+            node = node.best_child(exploration_weight)
+            path.append(node)
+            await emit_event("selection", node)
+
+            # Expansion
             if not node.is_fully_expanded(get_actions_func):
-                # Expand node
                 new_node = node.expand(get_actions_func, transition_func)
                 if new_node:
                     node = new_node
-                    path.append(node)
-                break
-            try:
-                node = node.best_child(exploration_weight)
                 path.append(node)
-            except ValueError:
-                # No children available
-                break
-            depth += 1
+                await emit_event("expansion", node)
 
-        # Evaluation
-        if not node.visits:  # Only evaluate if not visited before
+            # Evaluation
             value = llm_evaluator.evaluate_state(str(node.state))
-        else:
-            value = node.value / node.visits
-
-        # Early stopping check
-        if value > best_value:
-            best_value = value
-            no_improvement_count = 0
-        else:
-            no_improvement_count += 1
+        await emit_event("evaluation", node, metadata={"evaluation_value": value})
 
         # Backpropagation
         for n in path:
+            prev_value = n.value
+            prev_visits = n.visits
             n.update(value)
-
-        # Early stopping if we found a very good solution
-        if best_value > early_stop_threshold and no_improvement_count >= patience:
-            logging.info(
-                f"Early stopping at iteration {iteration + 1}: "
-                f"Found solution with value {best_value:.3f}"
+            await emit_event(
+                "backprop",
+                n,
+                metadata={
+                    "value_delta": n.value - prev_value,
+                    "visits_delta": n.visits - prev_visits,
+                },
             )
-            break
-
-    # Ensure root has children before selecting best
-    if not root.children:
-        # Force expansion if no children
-        new_node = root.expand(get_actions_func, transition_func)
-        if new_node:
-            value = llm_evaluator.evaluate_state(str(new_node.state))
-            new_node.update(value)
 
     try:
         best_child = root.most_visited_child()
         return best_child.action_taken, root
     except ValueError:
-        # If still no valid children, return None
         logging.warning("No valid actions found during search")
+        return None, root
         return None, root
