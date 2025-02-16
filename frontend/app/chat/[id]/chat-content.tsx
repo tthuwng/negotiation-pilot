@@ -6,8 +6,17 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { MCTSNode, useMCTSWebSocket } from "@/lib/hooks/use-mcts-websocket";
 import { Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ChevronDown, Video } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, ChevronDown, PanelLeft, Video } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { ImperativePanelHandle } from "react-resizable-panels";
 
 interface ChatContentProps {
   chat: {
@@ -396,7 +405,30 @@ export function ChatContent({
     }
   };
 
-  const { setOpen, open } = useSidebar();
+  const { setOpen, open, setOpenMobile, openMobile, isMobile } = useSidebar();
+  const negotiationRef = useRef<ImperativePanelHandle>(null);
+  const chatRef = useRef<ImperativePanelHandle>(null);
+  const [isNegotitationCopilotOpen, setIsNegotiationCopilotOpen] =
+    useState(false);
+  useEffect(() => {
+    const negotiationPanel = negotiationRef.current;
+
+    const chatPanel = chatRef.current;
+    console.log(isMobile);
+    if (isMobile) {
+      if (isNegotitationCopilotOpen) {
+        negotiationPanel?.expand();
+      } else {
+        negotiationPanel?.collapse();
+      }
+      chatPanel?.expand();
+    } else {
+      if (isNegotitationCopilotOpen) {
+        negotiationPanel?.expand();
+      }
+      chatPanel?.expand();
+    }
+  }, [isMobile, isNegotitationCopilotOpen]);
 
   // Add connection status indicator
   const connectionStatus = isConnected ? (
@@ -412,120 +444,178 @@ export function ChatContent({
   );
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background w-screen">
       {/* Chat Section */}
-      <div className="flex-1 border-r">
-        <div className="border-b p-4 flex items-center gap-4">
-          <Button onClick={() => setOpen(!open)} variant="ghost" size="icon">
-            <ArrowLeft
-              className={cn("size-4 duration-300", open && "rotate-180")}
-            />
-          </Button>
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-full bg-muted" />
-            <span className="font-medium">Bossy Manager</span>
-          </div>
-          <Button variant="ghost" size="icon" className="ml-auto">
-            <Video className="size-4" />
-          </Button>
-        </div>
-
-        <div className="p-4 space-y-4 h-[calc(100vh-8rem)] overflow-y-auto">
-          {messages.map((message, i) => (
-            <div
-              key={message.id}
-              className={`flex ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`rounded-2xl px-4 py-2 max-w-[80%] ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel
+          minSize={isMobile && isNegotitationCopilotOpen ? 0 : 25}
+          defaultSize={79}
+          ref={chatRef}
+        >
+          <div className="flex-1 border-r">
+            <div className="border-b p-4 flex items-center gap-4">
+              <Button
+                onClick={() => {
+                  if (isMobile) {
+                    setOpenMobile(!openMobile);
+                  } else {
+                    setOpen(!open);
+                  }
+                }}
+                variant="ghost"
+                size="icon"
               >
-                {message.content}
+                <ArrowLeft
+                  className={cn("size-4 duration-300", open && "rotate-180")}
+                />
+              </Button>
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-full bg-muted" />
+                <span className="font-medium">Bossy Manager</span>
+              </div>
+              <Button
+                onClick={() => {
+                  setIsNegotiationCopilotOpen(!isNegotitationCopilotOpen);
+                  const negotiationPanel = negotiationRef.current;
+                  negotiationPanel?.expand();
+                }}
+                variant="ghost"
+                size="icon"
+                className="ml-auto"
+              >
+                <PanelLeft />
+              </Button>
+            </div>
+
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-4 h-full overflow-y-auto">
+                {messages.map((message, i) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`rounded-2xl px-4 py-2 max-w-[80%] ${
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      }`}
+                    >
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+
+            <div className="border-t p-4">
+              <div className="flex items-center gap-4">
+                <Input
+                  placeholder={isSending ? "Sending..." : "Message..."}
+                  className="w-full"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && !e.shiftKey && handleSendMessage()
+                  }
+                  disabled={isReadonly || isSending}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={isReadonly || isSending}
+                >
+                  Send
+                </Button>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
 
-        <div className="border-t p-4">
-          <Input
-            placeholder={isSending ? "Sending..." : "Message..."}
-            className="w-full"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && !e.shiftKey && handleSendMessage()
-            }
-            disabled={isReadonly || isSending}
-          />
-        </div>
-      </div>
+        <ResizablePanel
+          ref={negotiationRef}
+          collapsible={true}
+          collapsedSize={0}
+          minSize={isMobile && isNegotitationCopilotOpen ? 100 : 21}
+          defaultSize={21}
+        >
+          <div className="flex flex-col size-full bg-background space-y-8 overflow-auto">
+            <div className="sticky top-0 border-b bg-background flex items-start justify-between p-3.5">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="size-10 rounded-lg bg-muted" />
+                  <div>
+                    <h2 className="font-semibold">Negotiation Copilot</h2>
+                    <p className="text-sm text-muted-foreground">v0.1</p>
+                  </div>
+                </div>
+              </div>
+              {connectionStatus}
+            </div>
+
+            <div className="sm:w-[400px] size-full space-y-4 p-4 py-0">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <span>CONVERSATION GOAL</span>
+                    <ChevronDown className="size-4" />
+                  </h3>
+                </div>
+                <Input
+                  placeholder="Enter your goal..."
+                  value={goal}
+                  onChange={(e) => setGoal(e.target.value)}
+                  disabled={isReadonly}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">SUGGESTED RESPONSES</h3>
+                <div className="space-y-2">
+                  {analysisResults.map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 bg-muted/50 rounded-md p-2 cursor-pointer hover:bg-muted/70 transition-colors"
+                      onClick={() => setInputValue(item.text)}
+                    >
+                      <span className="text-primary font-medium">
+                        {(item.score * 100).toFixed(0)}%
+                      </span>
+                      <span className="text-sm">{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">MCTS EXPLORATION</h3>
+                <MCTSVisualization nodes={nodes} stats={stats} />
+              </div>
+
+              {wsError && (
+                <div className="p-4 text-sm text-red-500 bg-red-50 rounded-md">
+                  {wsError}
+                </div>
+              )}
+            </div>
+            <div className="p-4 w-full border-t sticky bottom-0 bg-background">
+              <Button
+                onClick={() => {
+                  setIsNegotiationCopilotOpen(false);
+                  const negotiationPanel = negotiationRef.current;
+                  negotiationPanel?.collapse();
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
       {/* Analysis Section */}
-      <div className="w-[400px] bg-background p-6 space-y-8">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="size-10 rounded-lg bg-muted" />
-              <div>
-                <h2 className="font-semibold">Negotiation Copilot</h2>
-                <p className="text-sm text-muted-foreground">v0.1</p>
-              </div>
-            </div>
-          </div>
-          {connectionStatus}
-        </div>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium flex items-center gap-2">
-                <span>CONVERSATION GOAL</span>
-                <ChevronDown className="size-4" />
-              </h3>
-            </div>
-            <Input
-              placeholder="Enter your goal..."
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              disabled={isReadonly}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">SUGGESTED RESPONSES</h3>
-            <div className="space-y-2">
-              {analysisResults.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 bg-muted/50 rounded-md p-2 cursor-pointer hover:bg-muted/70 transition-colors"
-                  onClick={() => setInputValue(item.text)}
-                >
-                  <span className="text-primary font-medium">
-                    {(item.score * 100).toFixed(0)}%
-                  </span>
-                  <span className="text-sm">{item.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">MCTS EXPLORATION</h3>
-            <MCTSVisualization nodes={nodes} stats={stats} />
-          </div>
-
-          {wsError && (
-            <div className="p-4 text-sm text-red-500 bg-red-50 rounded-md">
-              {wsError}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
