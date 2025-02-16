@@ -2,8 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSidebar } from "@/components/ui/sidebar";
 import { useMCTSWebSocket } from "@/lib/hooks/use-mcts-websocket";
 import { Message } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { ArrowLeft, ChevronDown, Video } from "lucide-react";
 import { useState } from "react";
 
@@ -162,9 +164,9 @@ export function ChatContent({ chat, id, uiMessages: initialMessages, chatModel, 
       setMessages(prev => [...prev, newMessage]);
       setInputValue("");
 
-      // Send to backend for boss response
-      const bossResponse = await fetch("/api/chat", {
-        method: "POST",
+      // Send to backend
+      const response = await fetch("/api/chat", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: chat.id,
@@ -219,17 +221,16 @@ export function ChatContent({ chat, id, uiMessages: initialMessages, chatModel, 
     }
   };
 
-  // Add maxNodes tracking
-  const maxVisitedNodes = Math.max(...nodes.map(n => n.visits), 1);
-  const maxValueNodes = nodes.filter(n => n.value > 0.5).length;
+
+  const {setOpen, open} = useSidebar()
 
   return (
     <div className="flex h-screen bg-background">
       {/* Chat Section */}
       <div className="flex-1 border-r">
         <div className="border-b p-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="size-4" />
+          <Button onClick={() => setOpen(!open)} variant="ghost" size="icon">
+            <ArrowLeft className={cn("size-4 duration-300", open && 'rotate-180')} />
           </Button>
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-full bg-muted" />
