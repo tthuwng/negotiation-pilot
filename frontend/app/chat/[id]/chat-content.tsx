@@ -2,8 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSidebar } from "@/components/ui/sidebar";
 import { useMCTSWebSocket } from "@/lib/hooks/use-mcts-websocket";
 import { Message } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { ArrowLeft, ChevronDown, Video } from "lucide-react";
 import { useState } from "react";
 
@@ -50,7 +52,7 @@ export function ChatContent({ chat, id, uiMessages: initialMessages, chatModel, 
 
       // Send to backend
       const response = await fetch("/api/chat", {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: chat.id,
@@ -85,13 +87,16 @@ export function ChatContent({ chat, id, uiMessages: initialMessages, chatModel, 
     }
   };
 
+
+  const {setOpen, open} = useSidebar()
+
   return (
     <div className="flex h-screen bg-background">
       {/* Chat Section */}
       <div className="flex-1 border-r">
         <div className="border-b p-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="size-4" />
+          <Button onClick={() => setOpen(!open)} variant="ghost" size="icon">
+            <ArrowLeft className={cn("size-4 duration-300", open && 'rotate-180')} />
           </Button>
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-full bg-muted" />

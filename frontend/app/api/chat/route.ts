@@ -4,9 +4,45 @@ import { Message } from "@/lib/types";
 import { generateUUID } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const supabase = await createClient();
+    const chatId = generateUUID();
+
+    const { error: chatError } = await supabase.from('chats').insert({
+      id: chatId,
+      userId: session.user.id,
+      model: "chat-model-small",
+      visibility: "private",
+      created_at: new Date().toISOString(),
+      title: 'New Chat'
+    });
+
+    if (chatError) {
+      console.error("Error creating chat:", chatError);
+      return new NextResponse("Error creating chat", { status: 500 });
+    }
+
+    return NextResponse.json({ chatId });
+  } catch (error) {
+    console.error(error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await auth();
+
+    console.log(session)
+
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
